@@ -25,12 +25,17 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
-    }
+    // ADMIN → Buzón de Recepción
+        if (auth()->user()->email === 'admin@convelac.com') {
+            return redirect('/buzon-recepcion');
+        }
 
+    // TODOS LOS DEMÁS → Buzón de Envío
+    return redirect('/buzon-envio');
+    }
+    
     /**
      * Destroy an authenticated session.
      */
