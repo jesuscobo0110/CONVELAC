@@ -11,15 +11,18 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// Buzón del Admin (recepción)
-Route::get('/buzon-recepcion', function () {
-    return view('buzon.recepcion');
-})->middleware('auth')->name('buzon.recepcion');
+use App\Http\Controllers\BuzonController;  // ← agrega esta línea arriba del todo
 
-// Buzón de los clientes (envío)
-Route::get('/buzon-envio', function () {
-    return view('buzon.envio');
-})->middleware('auth')->name('buzon.envio');
+Route::middleware('auth')->group(function () {
+    Route::get('/buzon-recepcion', [BuzonController::class, 'recepcion'])
+        ->name('buzon.recepcion');
+
+    Route::get('/buzon-envio', [BuzonController::class, 'envio'])
+         ->name('buzon.envio');
+        Route::post('/comprobantes', [App\Http\Controllers\ComprobanteController::class, 'store'])
+        ->name('comprobante.store');
+});
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
