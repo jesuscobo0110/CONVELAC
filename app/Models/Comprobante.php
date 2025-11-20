@@ -11,13 +11,18 @@ class Comprobante extends Model
 
     protected $fillable = [
         'user_id',
+        'url_archivo',
+        'archivos_json',
         'codigo_envio',
         'tipo',
-        'url_archivo',
         'fecha_envio',
     ];
 
-    // Relación con el usuario (cliente) que lo envió
+    protected $casts = [
+        'archivos_json' => 'array',
+        'fecha_envio'   => 'date',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
