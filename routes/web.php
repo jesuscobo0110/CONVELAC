@@ -14,13 +14,19 @@ Route::get('/dashboard', function () {
 use App\Http\Controllers\BuzonController;  // ← agrega esta línea arriba del todo
 
 Route::middleware('auth')->group(function () {
-    Route::get('/buzon-recepcion', [BuzonController::class, 'recepcion'])
-        ->name('buzon.recepcion');
 
-    Route::get('/buzon-envio', [BuzonController::class, 'envio'])
-         ->name('buzon.envio');
-        Route::post('/comprobantes', [App\Http\Controllers\ComprobanteController::class, 'store'])
-        ->name('comprobante.store');
+    // Página de envío del cliente
+    Route::get('/buzon-envio', [ComprobanteController::class, 'envio'])->name('buzon.envio');
+    
+    // Subir comprobantes
+    Route::post('/comprobante', [ComprobanteController::class, 'store'])->name('comprobante.store');
+
+    // Buzón de recepción (admin o quien reciba)
+    Route::get('/buzon-recepcion', [ComprobanteController::class, 'recepcion'])->name('buzon.recepcion');
+
+    // NUEVA RUTA: marcar como visto + abrir el archivo
+    Route::get('/comprobante/{comprobante}/{publicId}/ver', [ComprobanteController::class, 'marcarVisto'])
+         ->name('comprobante.ver');
 });
 
 
