@@ -1,0 +1,12 @@
+[33m10dbc9a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m HEAD@{0}: reset: moving to HEAD~1
+[33med30277[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{1}: reset: moving to ed30277
+[33m10dbc9a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m HEAD@{2}: reset: moving to 10dbc9a
+[33med30277[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{3}: commit: ultimos passos (falta diseño
+[33m10dbc9a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m HEAD@{4}: reset: moving to 10dbc9a
+[33m10dbc9a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m HEAD@{5}: commit: bases logradas
+[33m9bcec2b[m HEAD@{6}: commit: funciono todo pero falta los retoques
+[33mb74bdf0[m HEAD@{7}: commit: login terminado/ buzon primeros pasos
+[33m32f2aeb[m HEAD@{8}: reset: moving to 32f2aeb
+[33m7335c4f[m HEAD@{9}: commit: 14/11/25
+[33m32f2aeb[m HEAD@{10}: pull origin main: Fast-forward
+[33mb3ea395[m HEAD@{11}: commit (initial): Subiendo proyecto completo de hoy 13/11/25

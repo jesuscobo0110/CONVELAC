@@ -40,7 +40,7 @@ class ComprobanteController extends Controller
             ]);
 
             $archivosJson[] = [
-                'url'       => $result['url'],                    // URL pública (ya funciona porque activaste PDF delivery)
+                'url'       => $result['secure_url'],
                 'public_id' => $result['public_id'],
                 'name'      => $archivo->getClientOriginalName(),
                 'type'      => $archivo->getMimeType(),
@@ -50,8 +50,8 @@ class ComprobanteController extends Controller
         Comprobante::create([
             'user_id'       => auth()->id(),
             'url_archivo'   => $archivosJson[0]['url'],
-            'archivos_json' => json_encode($archivosJson),        // Siempre string JSON
-            'archivos_vistos' => null,                            // nuevo campo, empieza vacío
+            'archivos_json' => json_encode($archivosJson),
+            'archivos_vistos' => null,
             'codigo_envio'  => 'COMP-' . str_pad(Comprobante::count() + 1, 4, '0', STR_PAD_LEFT),
             'tipo'          => $request->has('es_retencion') ? 'retencion' : 'pago',
             'fecha_envio'   => $request->fecha_envio,
@@ -65,31 +65,48 @@ class ComprobanteController extends Controller
         return back()->with('success', $mensaje);
     }
 
-    // NUEVO MÉTODO: marcar archivo como visto y abrirlo
+    // Marcar como visto y abrir archivo
     public function marcarVisto($comprobanteId, $publicId)
     {
         $comprobante = Comprobante::findOrFail($comprobanteId);
 
-        // Cargar los ya vistos
-        $vistos = $comprobante->archivos_vistos 
-            ? json_decode($comprobante->archivos_vistos, true) 
-            : [];
+        $vistos = $comprobante->archivos_vistos ? json_decode($comprobante->archivos_vistos, true) : [];
 
-        // Si aún no está marcado, lo marcamos
         if (!in_array($publicId, $vistos)) {
             $vistos[] = $publicId;
             $comprobante->archivos_vistos = json_encode($vistos);
             $comprobante->save();
         }
 
-        // Buscar la URL del archivo y redirigir para que se abra
-        $archivos = json_decode($comprobante->archivos_json, true);
+        $archivos = json_decode($comprobante->archivos_json, true) ?? [];
         foreach ($archivos as $archivo) {
             if ($archivo['public_id'] === $publicId) {
-                return redirect()->to($archivo['url']);
+                return redirect($archivo['url']);
             }
         }
 
-        return back();
+        return back()->withErrors(['archivo' => 'Archivo no encontrado']);
+    }
+
+    // Descargar con nombre original
+    public function download($filename, Request $request)
+    {
+        $original_name = $request->query('original_name', $filename);
+
+        $url = "https://res.cloudinary.com/densjsqxk/raw/upload/v1/{$filename}";
+
+        $response = \Illuminate\Support\Facades\Http::get($url);
+
+        if ($response->failed()) {
+            $url = "https://res.cloudinary.com/densjsqxk/raw/upload/v1/" . basename($filename);
+            $response = \Illuminate\Support\Facades\Http::get($url);
+            if ($response->failed()) {
+                abort(404);
+            }
+        }
+
+        return response($response->body(), 200)
+            ->header('Content-Type', $response->header('Content-Type') ?? 'application/octet-stream')
+            ->header('Content-Disposition', 'attachment; filename="' . $original_name . '"');
     }
 }
