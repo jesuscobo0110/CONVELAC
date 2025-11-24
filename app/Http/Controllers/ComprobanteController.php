@@ -66,27 +66,22 @@ class ComprobanteController extends Controller
     }
 
     // Marcar como visto y abrir archivo
-    public function marcarVisto($comprobanteId, $publicId)
-    {
-        $comprobante = Comprobante::findOrFail($comprobanteId);
+    public function marcarVistoAjax($comprobanteId, $publicId)
+{
+    $comprobante = Comprobante::findOrFail($comprobanteId);
 
-        $vistos = $comprobante->archivos_vistos ? json_decode($comprobante->archivos_vistos, true) : [];
+    $vistos = $comprobante->archivos_vistos 
+        ? json_decode($comprobante->archivos_vistos, true) 
+        : [];
 
-        if (!in_array($publicId, $vistos)) {
-            $vistos[] = $publicId;
-            $comprobante->archivos_vistos = json_encode($vistos);
-            $comprobante->save();
-        }
-
-        $archivos = json_decode($comprobante->archivos_json, true) ?? [];
-        foreach ($archivos as $archivo) {
-            if ($archivo['public_id'] === $publicId) {
-                return redirect($archivo['url']);
-            }
-        }
-
-        return back()->withErrors(['archivo' => 'Archivo no encontrado']);
+    if (!in_array($publicId, $vistos)) {
+        $vistos[] = $publicId;
+        $comprobante->archivos_vistos = json_encode($vistos);
+        $comprobante->save();
     }
+
+    return response()->json(['success' => true]);
+}
 
     // Descargar con nombre original
     public function download($filename, Request $request)

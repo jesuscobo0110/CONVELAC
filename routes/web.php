@@ -26,6 +26,9 @@ Route::middleware('auth')->group(function () {
          ->name('comprobante.download')
          ->where('filename', '.*');
 
+    Route::post('/comprobante/{comprobante}/{publicId}/marcar-visto', [ComprobanteController::class, 'marcarVistoAjax'])
+    ->name('comprobante.marcar-visto');
+
     // AQUÍ VAN LAS RUTAS QUE FALTABAN
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
