@@ -77,15 +77,12 @@ class ComprobanteController extends Controller
         return back()->with('success', $mensaje);
     }
 
-    // Marcar como visto (AJAX - para el botón VER)
+        // Marcar como visto (AJAX - para el botón VER)
     public function marcarVistoAjax($comprobanteId, $publicId)
     {
-        $comprobante = Comprobante::findOrFail($comprobanteId);
-
-        $vistos = $comprobante->archivos_vistos 
-            ? json_decode($comprobante->archivos_vistos, true) 
-            : [];
-
+        $comprobante = \App\Models\Comprobante::findOrFail($comprobanteId);
+        $vistos = $comprobante->archivos_vistos ? json_decode($comprobante->archivos_vistos, true) : [];
+    
         if (!in_array($publicId, $vistos)) {
             $vistos[] = $publicId;
             $comprobante->archivos_vistos = json_encode($vistos);

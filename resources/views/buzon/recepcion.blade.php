@@ -1,155 +1,107 @@
 <x-app-layout>
-    <div class="min-h-screen bg-gradient-to-br from-sky-50 to-sky-100 py-12 px-6">
-        <div class="max-w-6xl mx-auto">
+    <!-- FONDO -->
+    <div class="min-h-screen bg-cover bg-center bg-fixed"
+         style="background-image: url('{{ asset('images/fondo-convelac.jpg') }}');">
+        <div class="min-h-screen bg-black bg-opacity-60 backdrop-blur-md">
 
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-10">
-                <img src="{{ asset('images/Logo Convelac HD.png') }}" alt="Convelac" class="h-16">
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="px-5 py-2.5 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition font-medium">
-                        Cerrar sesión
-                    </button>
-                </form>
-            </div>
+            <div class="max-w-7xl mx-auto px-6 pt-20 pb-12">
 
-            <h1 class="text-4xl font-bold text-sky-800 text-center mb-4">Buzón de Recepción</h1>
-            <p class="text-center text-lg text-gray-600 mb-12">Aquí verás los comprobantes de tus clientes.</p>
+                <h1 class="text-6xl font-black text-white text-center mb-6 drop-shadow-2xl">
+                    Buzón de Recepción
+                </h1>
+                <p class="text-2xl text-gray-200 text-center mb-20 drop-shadow-lg">
+                    Aquí verás los comprobantes de tus clientes.
+                </p>
 
-            @if(session('success'))
-                <div class="mb-8 p-6 bg-green-100 border-2 border-green-400 rounded-2xl text-center">
-                    <p class="text-green-800 font-bold text-xl">{{ session('success') }}</p>
-                </div>
-            @endif
-
-            @if($comprobantes->isEmpty())
-                <p class="text-center text-gray-500 text-xl py-20">Aún no hay comprobantes recibidos</p>
-            @else
-                <div class="space-y-10">
-                    @foreach($comprobantes as $comprobante)
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    @forelse($comprobantes as $comprobante)
                         @php
-                            $archivos = is_array($comprobante->archivos_json)
-                                ? $comprobante->archivos_json
-                                : (is_string($comprobante->archivos_json) ? json_decode($comprobante->archivos_json, true) : []);
-
-                            $vistos = is_array($comprobante->archivos_vistos)
-                                ? $comprobante->archivos_vistos
-                                : (is_string($comprobante->archivos_vistos) ? json_decode($comprobante->archivos_vistos, true) : []);
-
-                            // Soporte para comprobantes antiguos
-                            if (empty($archivos) && $comprobante->url_archivo) {
-                                $archivos = [[
-                                    'url' => $comprobante->url_archivo,
-                                    'name' => 'comprobante.pdf',
-                                    'public_id' => 'legacy_' . $comprobante->id
-                                ]];
-                            }
+                            $archivos = json_decode($comprobante->archivos_json, true);
+                            $vistos = $comprobante->archivos_vistos ? json_decode($comprobante->archivos_vistos, true) : [];
                         @endphp
 
-                        <div class="bg-white rounded-3xl shadow-2xl p-10 border-l-8 border-sky-600">
-                            <div class="flex justify-between items-center mb-6">
-                                <div>
-                                    <h3 class="text-2xl font-bold text-sky-800">{{ $comprobante->codigo_envio }}</h3>
-                                    <p class="text-lg text-gray-700"><strong>Cliente:</strong> {{ $comprobante->user->name }}</p>
-                                    <p class="text-lg text-gray-700"><strong>Tipo:</strong> {{ ucfirst($comprobante->tipo) }}</p>
-                                    <p class="text-lg text-gray-700"><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($comprobante->fecha_envio)->format('d/m/Y') }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <span class="inline-block bg-green-100 text-green-800 px-6 py-3 rounded-full text-xl font-bold">Recibido</span>
-
-                                    @if(count($vistos) < count($archivos))
-                                        <div id="aviso-nuevos-{{ $comprobante->id }}" class="mt-3">
-                                            <span class="inline-block bg-red-600 text-white px-6 py-3 rounded-full text-lg font-bold animate-pulse">
-                                                HAY ARCHIVOS NUEVOS
-                                            </span>
-                                        </div>
-                                    @endif
-                                </div>
+                        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div class="bg-gradient-to-br from-cyan-600 to-blue-800 p-6 text-white">
+                                <h3 class="text-2xl font-bold">{{ $comprobante->codigo_envio }}</h3>
+                                <p class="mt-2">Cliente: {{ $comprobante->user->name }}</p>
+                                <p>Tipo: {{ $comprobante->tipo === 'retencion' ? 'Retención' : 'Pago' }}</p>
+                                <p>Fecha: {{ \Carbon\Carbon::parse($comprobante->fecha_envio)->format('d/m/Y') }}</p>
                             </div>
 
-                            <div class="mt-8">
-                                <h4 class="text-xl font-bold text-gray-800 mb-6">Adjuntos ({{ count($archivos) }})</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div class="p-8">
+                                <p class="text-center font-bold text-gray-700 mb-6 text-lg">
+                                    Adjuntos ({{ count($archivos) }})
+                                </p>
+
+                                <div class="grid grid-cols-2 gap-5">
                                     @foreach($archivos as $archivo)
                                         @php
-                                            $nombre    = $archivo['name'] ?? 'archivo.pdf';
-                                            $publicId  = $archivo['public_id'] ?? 'legacy_' . $comprobante->id;
-                                            $url       = $archivo['url'] ?? $comprobante->url_archivo;
-                                            $esVisto   = in_array($publicId, $vistos);
-                                            $esPdf     = str_ends_with(strtolower($nombre), '.pdf');
+                                            $publicId = $archivo['public_id']; // incluye comprobantes/
+                                            $visto = in_array($publicId, $vistos);
                                         @endphp
 
-                                        <div class="bg-gray-50 rounded-2xl p-8 border-4 {{ $esVisto ? 'border-gray-300' : 'border-sky-500 shadow-xl' }} hover:shadow-2xl transition">
-                                            <div class="text-center mb-6">
-                                                @if($esPdf)
-                                                    <svg class="w-28 h-28 mx-auto text-red-600" fill="currentColor" viewBox="0 0 384 512">
-                                                        <path d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM80 64h64c8.8 0 16 7.2 16 16s-7.2 16-16 16H80c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64h64c8.8 0 16 7.2 16 16s-7.2 16-16 16H80c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64h64c8.8 0 16 7.2 16 16s-7.2 16-16 16H80c-8.8 0-16-7.2-16-16s7.2-16 16-16z"/>
-                                                    </svg>
-                                                    <p class="text-2xl font-bold text-gray-700 mt-3">PDF</p>
-                                                @else
-                                                    <img src="{{ $url }}?w=400&h=300&fit=crop" class="rounded-xl shadow-lg mx-auto max-h-48" alt="{{ $nombre }}">
-                                                @endif
+                                        <div class="bg-gray-50 rounded-xl p-4 text-center border-4 transition-all duration-300
+                                            {{ $visto ? 'border-green-500' : 'border-red-500' }}"
+                                            id="file-{{ $comprobante->id }}-{{ $publicId }}">
+
+                                            <div class="text-4xl mb-2">
+                                                <span class="text-red-600 font-bold">PDF</span>
                                             </div>
 
-                                            <p class="text-center font-bold text-gray-800 text-lg mb-6 truncate px-4">{{ $nombre }}</p>
+                                            <p class="text-xs text-gray-600 truncate mb-3">
+                                                {{ Str::limit($archivo['name'], 20) }}
+                                            </p>
 
-                                            <!-- BOTÓN VER ARCHIVO + MARCAR COMO VISTO AL INSTANTE -->
-                                            <div class="mt-4">
-                                                <a href="{{ $url }}"
-                                                   target="_blank"
-                                                   onclick="event.preventDefault();
-                                                            if(!{{ $esVisto ? 'true' : 'false' }}) {
-                                                                marcarComoVisto({{ $comprobante->id }}, '{{ $publicId }}', this);
-                                                            }
-                                                            window.open('{{ $url }}', '_blank');"
-                                                   class="block w-full text-center py-5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-xl shadow-lg">
-                                                    VER ARCHIVO
-                                                </a>
-                                            </div>
+                                            <button type="button"
+                                                    onclick="verYMarcar('{{ $archivo['url'] }}', {{ $comprobante->id }}, '{{ $publicId }}')"
+                                                    class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition shadow">
+                                                VER ARCHIVO
+                                            </button>
 
-                                            @if(!$esVisto)
-                                                <div class="mt-4 text-center badge-nuevo">
-                                                    <span class="inline-block bg-red-600 text-white px-6 py-3 rounded-full text-lg font-bold animate-pulse">
-                                                        NUEVO
-                                                    </span>
-                                                </div>
-                                            @endif
+                                            <p class="mt-3 text-sm font-bold {{ $visto ? 'text-green-600' : 'text-red-600' }}">
+                                                {{ $visto ? 'Visto' : 'Nuevo' }}
+                                            </p>
                                         </div>
                                     @endforeach
                                 </div>
                             </div>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="col-span-3 text-center py-32">
+                            <p class="text-5xl font-bold text-white drop-shadow-2xl">No hay comprobantes aún</p>
+                        </div>
+                    @endforelse
                 </div>
-
-                <div class="mt-12 text-center">
-                    {{ $comprobantes->links() }}
-                </div>
-            @endif
+            </div>
         </div>
     </div>
 
-    <!-- SCRIPTS PARA MARCAR COMO VISTO AL INSTANTE -->
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- SCRIPT QUE FUNCIONA AL 100% -->
     <script>
-        function marcarComoVisto(comprobanteId, publicId, elemento) {
-            // Quitar estilos de "nuevo" al instante
-            const card = elemento.closest('.border-sky-500') || elemento.closest('.border-gray-300');
-            if (card) {
-                card.classList.remove('border-sky-500', 'shadow-xl');
-                card.classList.add('border-gray-300');
-            }
-            elemento.closest('.bg-gray-50').querySelector('.badge-nuevo')?.remove();
+        function verYMarcar(url, comprobanteId, publicId) {
+            // Abrir archivo
+            window.open(url, '_blank');
 
-            // Enviar al servidor
-            axios.post(`/comprobante/${comprobanteId}/${publicId}/marcar-visto`)
-                .then(() => {
-                    const avisoGrande = document.getElementById(`aviso-nuevos-${comprobanteId}`);
-                    if (avisoGrande && avisoGrande.parentElement.querySelectorAll('.badge-nuevo').length === 0) {
-                        avisoGrande.remove();
-                    }
-                })
-                .catch(() => console.error('Error al marcar como visto'));
+            const caja = document.getElementById('file-' + comprobanteId + '-' + publicId);
+            if (!caja || caja.classList.contains('border-green-500')) return;
+
+            // Enviar AJAX
+            const formData = new FormData();
+            formData.append('_token', '{{ csrf_token() }}');
+
+            fetch(`/comprobante/${comprobanteId}/${publicId}/marcar-visto`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(() => {
+                caja.classList.remove('border-red-500');
+                caja.classList.add('border-green-500');
+                caja.querySelector('p:last-child').textContent = 'Visto';
+                caja.querySelector('p:last-child').classList.replace('text-red-600', 'text-green-600');
+            });
         }
     </script>
 </x-app-layout>
