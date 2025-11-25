@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Comprobante;
 use Cloudinary\Cloudinary;
+use Illuminate\Support\Facades\Mail;           // ← NUEVO
+use App\Mail\NuevoComprobanteMail;             // ← NUEVO
 
 class ComprobanteController extends Controller
 {
@@ -21,7 +23,7 @@ class ComprobanteController extends Controller
         return view('buzon.recepcion', compact('comprobantes'));
     }
 
-    // Guardar comprobantes
+    // Guardar comprobantes + ENVIAR EMAIL AUTOMÁTICO
     public function store(Request $request)
     {
         $request->validate([
@@ -47,15 +49,25 @@ class ComprobanteController extends Controller
             ];
         }
 
-        Comprobante::create([
-            'user_id'       => auth()->id(),
-            'url_archivo'   => $archivosJson[0]['url'],
-            'archivos_json' => json_encode($archivosJson),
+        // CREAR EL COMPROBANTE
+        $comprobante = Comprobante::create([
+            'user_id'         => auth()->id(),
+            'url_archivo'     => $archivosJson[0]['url'],
+            'archivos_json'   => json_encode($archivosJson),
             'archivos_vistos' => null,
-            'codigo_envio'  => 'COMP-' . str_pad(Comprobante::count() + 1, 4, '0', STR_PAD_LEFT),
-            'tipo'          => $request->has('es_retencion') ? 'retencion' : 'pago',
-            'fecha_envio'   => $request->fecha_envio,
+            'codigo_envio'    => 'COMP-' . str_pad(Comprobante::count() + 1, 4, '0', STR_PAD_LEFT),
+            'tipo'            => $request->has('es_retencion') ? 'retencion' : 'pago',
+            'fecha_envio'     => $request->fecha_envio,
         ]);
+
+        // ENVIAR CORREO AUTOMÁTICO AL ADMIN
+        try {
+            Mail::to('jesuscobo0110@gmail.com') // ← cambia por el correo del admin cuando quieras
+                ->send(new NuevoComprobanteMail($comprobante));
+        } catch (\Exception $e) {
+            // Si falla el email, no rompemos todo (solo se guarda en logs)
+            \Log::warning('No se pudo enviar email de nuevo comprobante: ' . $e->getMessage());
+        }
 
         $cantidad = count($archivosJson);
         $mensaje = $cantidad == 1 
@@ -65,25 +77,25 @@ class ComprobanteController extends Controller
         return back()->with('success', $mensaje);
     }
 
-    // Marcar como visto y abrir archivo
+    // Marcar como visto (AJAX - para el botón VER)
     public function marcarVistoAjax($comprobanteId, $publicId)
-{
-    $comprobante = Comprobante::findOrFail($comprobanteId);
+    {
+        $comprobante = Comprobante::findOrFail($comprobanteId);
 
-    $vistos = $comprobante->archivos_vistos 
-        ? json_decode($comprobante->archivos_vistos, true) 
-        : [];
+        $vistos = $comprobante->archivos_vistos 
+            ? json_decode($comprobante->archivos_vistos, true) 
+            : [];
 
-    if (!in_array($publicId, $vistos)) {
-        $vistos[] = $publicId;
-        $comprobante->archivos_vistos = json_encode($vistos);
-        $comprobante->save();
+        if (!in_array($publicId, $vistos)) {
+            $vistos[] = $publicId;
+            $comprobante->archivos_vistos = json_encode($vistos);
+            $comprobante->save();
+        }
+
+        return response()->json(['success' => true]);
     }
 
-    return response()->json(['success' => true]);
-}
-
-    // Descargar con nombre original
+    // Descargar con nombre original (por si lo vuelves a activar algún día)
     public function download($filename, Request $request)
     {
         $original_name = $request->query('original_name', $filename);

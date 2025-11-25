@@ -2,11 +2,16 @@
     <div class="min-h-screen bg-gradient-to-br from-sky-50 to-sky-100 py-12 px-6">
         <div class="max-w-4xl mx-auto">
 
-            <!-- Header y saludo -->
+            <!-- Header con botón IGUAL que en recepción -->
             <div class="flex justify-between items-center mb-10">
                 <img src="{{ asset('images/Logo Convelac HD.png') }}" alt="Convelac" class="h-16">
-                <form method="POST" action="{{ route('logout') }}">@csrf
-                    <button type="submit" class="text-sm text-red-600 hover:text-red-800 underline font-medium">Cerrar sesión</button>
+
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit" 
+                            class="px-5 py-2.5 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition font-medium">
+                        Cerrar sesión
+                    </button>
                 </form>
             </div>
 
@@ -39,7 +44,7 @@
                     <input type="date" name="fecha_envio" required class="w-full px-5 py-4 text-lg border border-gray-300 rounded-xl focus:ring-4 focus:ring-sky-300 focus:border-sky-500">
                 </div>
 
-                <!-- DRAG & DROP FINAL 100% FUNCIONAL -->
+                <!-- DRAG & DROP 100% FUNCIONAL (coma corregida) -->
                 <div x-data="{
                     files: [],
                     addFiles(newFiles) {
@@ -65,18 +70,8 @@
                         $refs.realInput.files = dt.files;
                     }
                 }">
-                    <!-- Input REAL (el que Laravel va a leer) -->
-                    <input 
-                        type="file"
-                        name="archivos[]"
-                        multiple
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        x-ref="realInput"
-                        class="hidden"
-                        @change="addFiles($event.target.files)"
-                    >
+                    <input type="file" name="archivos[]" multiple accept=".pdf,.jpg,.jpeg,.png" x-ref="realInput" class="hidden" @change="addFiles($event.target.files)">
 
-                    <!-- Área visual -->
                     <div class="bg-sky-50 rounded-3xl p-12 border-4 border-dashed border-sky-400">
                         <div class="text-center mb-10">
                             <svg class="mx-auto h-20 w-20 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,14 +89,12 @@
                             @click="$refs.realInput.click()"
                             class="min-h-96 p-12 border-4 border-dashed border-gray-300 rounded-3xl cursor-pointer hover:border-sky-500 transition-all bg-white text-center"
                         >
-                            <!-- Sin archivos -->
                             <template x-if="files.length === 0">
                                 <div class="py-24">
                                     <p class="text-2xl text-gray-500">No has seleccionado archivos aún</p>
                                 </div>
                             </template>
 
-                            <!-- Con archivos -->
                             <template x-if="files.length > 0">
                                 <div class="space-y-8">
                                     <p class="text-4xl font-bold text-green-600">
