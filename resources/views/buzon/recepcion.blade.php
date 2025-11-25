@@ -1,5 +1,4 @@
 <x-app-layout>
-    <!-- FONDO -->
     <div class="min-h-screen bg-cover bg-center bg-fixed"
          style="background-image: url('{{ asset('images/fondo-convelac.jpg') }}');">
         <div class="min-h-screen bg-black bg-opacity-60 backdrop-blur-md">
@@ -36,16 +35,23 @@
                                 <div class="grid grid-cols-2 gap-5">
                                     @foreach($archivos as $archivo)
                                         @php
-                                            $publicId = $archivo['public_id']; // incluye comprobantes/
+                                            $publicId = $archivo['public_id'];
                                             $visto = in_array($publicId, $vistos);
+                                            $extension = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
+                                            $esPdf = in_array($extension, ['pdf']);
                                         @endphp
 
                                         <div class="bg-gray-50 rounded-xl p-4 text-center border-4 transition-all duration-300
                                             {{ $visto ? 'border-green-500' : 'border-red-500' }}"
                                             id="file-{{ $comprobante->id }}-{{ $publicId }}">
 
-                                            <div class="text-4xl mb-2">
-                                                <span class="text-red-600 font-bold">PDF</span>
+                                            <!-- PDF o IMG según el archivo -->
+                                            <div class="text-4xl mb-2 font-bold">
+                                                @if($esPdf)
+                                                    <span class="text-red-600">PDF</span>
+                                                @else
+                                                    <span class="text-blue-600">IMG</span>
+                                                @endif
                                             </div>
 
                                             <p class="text-xs text-gray-600 truncate mb-3">
@@ -63,9 +69,10 @@
                                             </p>
                                         </div>
                                     @endforeach
-                                </div>
+                                </p>
                             </div>
                         </div>
+                    </div>
                     @empty
                         <div class="col-span-3 text-center py-32">
                             <p class="text-5xl font-bold text-white drop-shadow-2xl">No hay comprobantes aún</p>
@@ -76,25 +83,19 @@
         </div>
     </div>
 
-    <!-- SCRIPT QUE FUNCIONA AL 100% -->
     <script>
         function verYMarcar(url, comprobanteId, publicId) {
-            // Abrir archivo
             window.open(url, '_blank');
-
             const caja = document.getElementById('file-' + comprobanteId + '-' + publicId);
             if (!caja || caja.classList.contains('border-green-500')) return;
 
-            // Enviar AJAX
             const formData = new FormData();
             formData.append('_token', '{{ csrf_token() }}');
 
             fetch(`/comprobante/${comprobanteId}/${publicId}/marcar-visto`, {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(() => {
                 caja.classList.remove('border-red-500');
