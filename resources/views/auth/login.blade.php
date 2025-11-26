@@ -1,79 +1,88 @@
 <x-guest-layout>
-    <div class="min-h-screen flex items-center justify-center bg-sky-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8">
+    <!-- FONDO EXACTAMENTE IGUAL QUE LOS BUZONES -->
+    <div class="min-h-screen bg-cover bg-center bg-fixed flex items-center justify-center px-4"
+         style="background-image: url('{{ asset('images/fondo-convelac.jpg') }}');">
+        
+        <!-- CAPA OSCURA + BLUR SUAVE (igual que recepción y envío) -->
+        <div class="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-md"></div>
 
-            <!-- LOGO + TÍTULO -->
-            <div class="text-center">
-                <img 
-                    src="{{ asset('images/Logo Convelac HD.png') }}" 
-                    alt="Logo Convelac" 
-                    class="w-32 h-32 mx-auto mb-6 object-contain rounded-full shadow-lg"
-                >
-                <h2 class="text-3xl font-bold text-sky-700 dark:text-sky-400">
-                    Buzón de Control Administrativo de Pago y Tributos
-                </h2>
-                <p class="mt-2 text-sm text-sky-600 dark:text-sky-300">
-                    Inicia sesión para gestionar tus documentos
+        <!-- TARJETA DE LOGIN CENTRADA -->
+        <div class="relative z-10 w-full max-w-md">
+            <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-white/30 text-center">
+
+                <!-- LOGO REDONDO Y PERFECTO (sin estirarse) -->
+                <div class="mb-8">
+                    <img src="{{ asset('images/Logo Convelac HD1.png') }}" 
+                         alt="Convelac" 
+                         class="w-32 h-32 mx-auto rounded-full object-contain shadow-2xl border-4 border-white/50">
+                </div>
+
+                <h1 class="text-4xl font-black text-gray-800 mb-2">La Pastoreña</h1>
+                <p class="text-lg text-gray-600 mb-10">Buzón Administrativo</p>
+
+                <!-- FORMULARIO -->
+                <form method="POST" action="{{ route('login') }}" class="space-y-6">
+                    @csrf
+
+                    <div>
+                        <x-text-input 
+                            id="email"
+                            type="email"
+                            name="email"
+                            :value="old('email')"
+                            required
+                            autofocus
+                            autocomplete="username"
+                            placeholder="Correo electrónico"
+                            class="w-full px-6 py-4 text-lg rounded-xl border-2 border-gray-300 focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition placeholder-gray-500"
+                        />
+                        <x-input-error :messages="$errors->get('email')" class="mt-2 text-left" />
+                    </div>
+
+                    <div>
+                        <x-text-input 
+                            id="password"
+                            type="password"
+                            name="password"
+                            required
+                            autocomplete="current-password"
+                            placeholder="Contraseña"
+                            class="w-full px-6 py-4 text-lg rounded-xl border-2 border-gray-300 focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition placeholder-gray-500"
+                        />
+                        <x-input-error :messages="$errors->get('password')" class="mt-2 text-left" />
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm text-gray-600">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="remember" class="w-5 h-5 text-cyan-600 rounded">
+                            <span>Recordarme</span>
+                        </label>
+                        @if (Route::has('password.request'))
+                            <a href="{{ route('password.request') }}" class="text-cyan-600 hover:text-cyan-800 font-semibold">
+                                ¿Olvidaste tu contraseña?
+                            </a>
+                        @endif
+                    </div>
+
+                    <button type="submit"
+                            class="w-full py-5 bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-700 hover:to-blue-800 text-white font-bold text-xl rounded-2xl shadow-xl transition transform hover:scale-105 mt-6">
+                        Iniciar Sesión
+                    </button>
+                </form>
+
+                @if (Route::has('register'))
+                    <p class="mt-8 text-gray-600">
+                        ¿No tienes cuenta? 
+                        <a href="{{ route('register') }}" class="text-cyan-600 hover:text-cyan-800 font-bold">
+                            Regístrate aquí
+                        </a>
+                    </p>
+                @endif
+
+                <p class="text-gray-500 text-sm mt-10">
+                    © {{ date('Y') }} Convelac · Leche de Calidad
                 </p>
             </div>
-
-            <!-- FORMULARIO -->
-            <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-6">
-                @csrf
-
-                <!-- EMAIL -->
-                <div>
-                    <x-input-label for="email" :value="__('Correo electrónico')" class="text-sky-700 dark:text-sky-300" />
-                    <x-text-input 
-                        id="email" 
-                        class="block mt-1 w-full" 
-                        type="email" 
-                        name="email" 
-                        :value="old('email')" 
-                        required 
-                        autofocus 
-                        autocomplete="username"
-                        placeholder="ej: admin@convelac.com"
-                    />
-                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                </div>
-
-                <!-- CONTRASEÑA -->
-                <div>
-                    <x-input-label for="password" :value="__('Contraseña')" class="text-sky-700 dark:text-sky-300" />
-                    <x-text-input 
-                        id="password" 
-                        class="block mt-1 w-full" 
-                        type="password" 
-                        name="password" 
-                        required 
-                        autocomplete="current-password"
-                        placeholder="••••••••"
-                    />
-                    <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                </div>
-
-                <!-- RECORDARME -->
-                <div class="flex items-center">
-                    <input id="remember" type="checkbox" name="remember" class="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded">
-                    <label for="remember" class="ml-2 block text-sm text-sky-700 dark:text-sky-300">
-                        {{ __('Recordarme') }}
-                    </label>
-                </div>
-
-                <!-- BOTÓN + OLVIDÉ -->
-                <div class="flex items-center justify-between">
-                    @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}" class="text-sm text-sky-600 hover:text-sky-700 dark:text-sky-400">
-                            {{ __('¿Olvidaste tu contraseña?') }}
-                        </a>
-                    @endif
-
-                    <x-primary-button class="bg-sky-600 hover:bg-sky-700">
-                        {{ __('Iniciar Sesión') }}
-                    </x-primary-button>
-                </div>
-            </form>
         </div>
     </div>
 </x-guest-layout>
