@@ -42,8 +42,7 @@ RUN chown -R www-data:www-data /var/www/html \
 EXPOSE 80
 
 # Comando de inicio (migrations, caches, PHP-FPM + Nginx)
-CMD php artisan key:generate --no-interaction --force && \
-    php artisan migrate --force && \
+CMD php artisan migrate --force && \
     php artisan optimize:clear && \
     php artisan config:cache && \
     php artisan route:cache && \
