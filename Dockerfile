@@ -1,28 +1,28 @@
 FROM php:8.2-fpm
 
-# Instalamos todo lo que Laravel normalmente necesita + nginx
+# Dependencias del sistema
 RUN apt-get update && apt-get install -y \
     nginx \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
+    libpq-dev \
+    postgresql-client \
     zip \
     unzip \
     git \
     curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Extensiones PHP necesarias
+# Extensiones PHP
 RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip
 
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Eliminamos el sitio por defecto de nginx
+# Nginx
 RUN rm -f /etc/nginx/sites-enabled/default
-
-# Copiamos nuestro config de nginx
 COPY nginx.conf /etc/nginx/sites-available/laravel
 RUN ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel
 
@@ -30,7 +30,7 @@ RUN ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel
 WORKDIR /var/www/html
 COPY . .
 
-# Composer con más memoria (esto soluciona el exit code 1)
+# Composer
 RUN composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist --no-progress || true
 
 # Permisos
