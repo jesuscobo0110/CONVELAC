@@ -48,4 +48,5 @@ CMD php artisan migrate --force && \
     php artisan route:cache && \
     php artisan view:cache && \
     envsubst '${PORT}' < /etc/nginx/sites-available/default.template > /etc/nginx/sites-available/default && \
+    ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/ && \
     php-fpm -F & nginx -g "daemon off;"
