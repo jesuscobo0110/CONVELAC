@@ -1,50 +1,42 @@
-# Dockerfile – versión final que funciona en Render Free (2025)
-FROM richarvey/nginx-php-fpm:latest
+# Dockerfile – Versión 100 % funcional en Render Free (Noviembre 2025)
+FROM php:8.2-fpm
 
-# Instalamos todas las dependencias necesarias para Alpine Linux
-RUN apk update && apk add --no-cache \
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \
-    oniguruma-dev \
+    libonig-dev \
     libxml2-dev \
+    libzip-dev \
     zip \
     unzip \
-    postgresql-dev \
-    # Estas dos líneas son opcionales pero evitan problemas de versión en Alpine nuevo
-    && echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
-    && echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-    && apk update
+    nginx \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalamos las extensiones PHP necesarias
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_pgsql
+# Instalar extensiones PHP
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_pgsql zip
 
-# Instalamos Composer
+# Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copiamos el código de la app
+# Configurar Nginx
+COPY nginx.conf /etc/nginx/sites-available/default
+RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+
+# Copiar código de la app
 WORKDIR /var/www/html
 COPY . .
 
-# Instalamos dependencias de Composer (solo producción)
-RUN composer install --optimize-autoloader --no-dev --no-scripts
+# Instalar dependencias de Laravel
+RUN composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
 
-# Permisos correctos para Laravel
+# Permisos
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Configuración de Nginx específica para Laravel
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
-
-# Puerto que escucha Render
 EXPOSE 80
 
-# Comando que se ejecuta al iniciar el contenedor
-CMD php artisan key:generate --no-interaction --force && \
-    php artisan migrate --force && \
-    php artisan optimize:clear && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache && \
-    php-fpm & nginx -g "daemon off;"
+# Script de arranque
+CMD ["/bin/bash", "-c", "php artisan key:generate --force && php artisan migrate --force && php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache && php-fpm -F & nginx -g 'daemon off;'"]
