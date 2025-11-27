@@ -23,7 +23,7 @@ RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Configurar Nginx para Laravel
-COPY nginx.conf /etc/nginx/sites-available/default
+COPY nginx.conf.template /etc/nginx/sites-available/default.template
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/ \
     && rm -f /etc/nginx/sites-enabled/default
 
