@@ -1,7 +1,13 @@
 FROM richarvey/nginx-php-fpm:latest
 
-RUN apt-get update && apt-get install -y \
-    git curl libpng-dev libonig-dev libxml2-dev zip unzip \
+RUN apk update && apk add --no-cache \
+    git \
+    curl \
+    libpng-dev \
+    oniguruma-dev \
+    libxml2-dev \
+    zip \
+    unzip \
 && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_pgsql
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
