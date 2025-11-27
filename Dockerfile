@@ -1,8 +1,8 @@
-# Dockerfile – Versión 100 % funcional en Render Free (Noviembre 2025)
 FROM php:8.2-fpm
 
-# Instalar dependencias del sistema
+# Dependencias del sistema (Debian, no Alpine para evitar bugs)
 RUN apt-get update && apt-get install -y \
+    nginx \
     git \
     curl \
     libpng-dev \
@@ -11,24 +11,27 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    nginx \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    libpq-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones PHP
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_pgsql zip
+# Configurar e instalar extensiones PHP (incluyendo pdo_pgsql con ruta correcta)
+RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+    && docker-php-ext-install pdo pdo_pgsql pgsql pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configurar Nginx
+# Configurar Nginx para Laravel
 COPY nginx.conf /etc/nginx/sites-available/default
-RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/ \
+    && rm -f /etc/nginx/sites-enabled/default
 
 # Copiar código de la app
 WORKDIR /var/www/html
 COPY . .
 
-# Instalar dependencias de Laravel
+# Instalar dependencias Laravel (producción)
 RUN composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
 
 # Permisos
@@ -38,5 +41,11 @@ RUN chown -R www-data:www-data /var/www/html \
 
 EXPOSE 80
 
-# Script de arranque
-CMD ["/bin/bash", "-c", "php artisan key:generate --force && php artisan migrate --force && php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache && php-fpm -F & nginx -g 'daemon off;'"]
+# Comando de inicio (migrations, caches, PHP-FPM + Nginx)
+CMD php artisan key:generate --no-interaction --force && \
+    php artisan migrate --force && \
+    php artisan optimize:clear && \
+    php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    php-fpm -F & nginx -g "daemon off;"
