@@ -9,7 +9,7 @@ RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copiamos el config directo (sin template ni envsubst)
+# ← AQUÍ ESTÁ EL FIX
 COPY nginx.conf /etc/nginx/sites-available/default
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
@@ -24,7 +24,6 @@ RUN chown -R www-data:www-data /var/www/html \
 
 EXPOSE 80
 
-# CMD súper simple y 100% funcional en Render
 CMD php artisan migrate --force --no-interaction && \
     php artisan config:cache && \
     php artisan route:cache && \
