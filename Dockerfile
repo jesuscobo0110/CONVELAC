@@ -23,14 +23,14 @@ RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Template de Nginx
+# Template Nginx
 COPY nginx.conf.template /etc/nginx/sites-available/default.template
 
-# Código de la app
+# Código fuente
 WORKDIR /var/www/html
 COPY . .
 
-# Dependencias Laravel
+# Dependencias Laravel (producción)
 RUN composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
 
 # Permisos
@@ -40,15 +40,16 @@ RUN chown -R www-data:www-data /var/www/html \
 
 EXPOSE 80
 
-# COMANDO FINAL (todo en una sola línea con bash -c para que funcione en Render)
-CMD /bin/bash -c " \
+# COMANDO FINAL que funciona en Render
+CMD /bin/bash -c "\
     php artisan migrate --force --no-interaction && \
-    php artisan optimize:clear && \
     php artisan config:cache && \
     php artisan route:cache && \
     php artisan view:cache && \
-    envsubst '${PORT}' < /etc/nginx/sites-available/default.template > /etc/nginx/sites-available/default && \
+    \
+    # Sustituye solo la variable PORT (escrita como \$PORT para que envsubst no toque otras $)
+    envsubst '\$PORT' < /etc/nginx/sites-available/default.template > /etc/nginx/sites-available/default && \
     ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default && \
+    \
     php-fpm -D && \
-    nginx -g 'daemon off;' \
-"
+    nginx -g 'daemon off;'
