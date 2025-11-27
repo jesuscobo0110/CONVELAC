@@ -1,7 +1,7 @@
 FROM php:8.2-fpm
 
 RUN apt-get update && apt-get install -y \
-    nginx git curl libpng-dev libonig-dev libxml2-dev libzip-dev zip unzip libpq-dev gettext \
+    nginx git curl libpng-dev libonig-dev libxml2-dev libzip-dev zip unzip libpq-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
@@ -9,7 +9,9 @@ RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-COPY nginx.conf.template /etc/nginx/sites-available/default.template
+# Copiamos el config directo (sin template ni envsubst)
+COPY nginx.conf /etc/nginx/sites-available/default
+RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 WORKDIR /var/www/html
 COPY . .
@@ -22,5 +24,10 @@ RUN chown -R www-data:www-data /var/www/html \
 
 EXPOSE 80
 
-# CMD CORREGIDO (todo en una sola línea y con comillas bien cerradas)
-CMD ["/bin/bash", "-c", "php artisan migrate --force --no-interaction && php artisan config:cache && php artisan route:cache && php artisan view:cache && envsubst '\\$PORT' < /etc/nginx/sites-available/default.template > /etc/nginx/sites-available/default && ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default && php-fpm -D && nginx -g 'daemon off;'"]
+# CMD súper simple y 100% funcional en Render
+CMD php artisan migrate --force --no-interaction && \
+    php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    php-fpm -D && \
+    nginx -g 'daemon off;'
