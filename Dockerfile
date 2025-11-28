@@ -1,56 +1,71 @@
-FROM php:8.2-fpm
+# ============================
+# Imagen base PHP 8.3 + FPM
+# ============================
+FROM php:8.3-fpm
 
-# -------- SISTEMA --------
+# ----------------------------
+# Instalar dependencias del sistema
+# ----------------------------
 RUN apt-get update && apt-get install -y \
     nginx \
-    curl \
+    supervisor \
     git \
-    zip \
+    curl \
     unzip \
+    zip \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
-    libpq-dev \
-    supervisor \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    nodejs \
+    npm \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# -------- EXTENSIONES PHP --------
-RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip
+# ----------------------------
+# Extensiones de PHP necesarias para Laravel
+# ----------------------------
+RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd zip
 
-# -------- INSTALAR NODE 18 --------
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
+# ----------------------------
+# Instalar Composer
+# ----------------------------
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# -------- COMPOSER --------
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# -------- ARCHIVOS APP --------
+# ----------------------------
+# Copiar código de la aplicación
+# ----------------------------
 WORKDIR /var/www/html
 COPY . .
 
-# -------- DEPENDENCIAS PHP --------
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# ----------------------------
+# Instalar dependencias de Laravel
+# ----------------------------
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# -------- BUILD FRONT-END --------
+# ----------------------------
+# Construir assets (Vite)
+# ----------------------------
 RUN npm ci --no-audit --prefer-offline
 RUN npm run build
 
-# -------- PERMISOS --------
+# ----------------------------
+# Permisos correctos
+# ----------------------------
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 storage bootstrap/cache
+ && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# -------- NGINX --------
-RUN rm -f /etc/nginx/sites-enabled/default
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-
-# -------- SUPERVISOR --------
+# ----------------------------
+# Copiar configuraciones de nginx y supervisord
+# ----------------------------
+COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-EXPOSE 80
+# ----------------------------
+# Exponer puerto 8080 (Render requiere NO usar 80)
+# ----------------------------
+EXPOSE 8080
 
-CMD php artisan migrate --force && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache && \
-    /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
+# ----------------------------
+# Comando por defecto: supervisord
+# ----------------------------
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
