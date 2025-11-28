@@ -1,27 +1,30 @@
-FROM php:8.3-fpm
+FROM php:8.2-fpm
 
+# Instalar dependencias
 RUN apt-get update && apt-get install -y \
-    git unzip curl supervisor nginx \
-    libpng-dev libonig-dev libxml2-dev libzip-dev \
-    nodejs npm
+    git curl zip unzip nginx supervisor \
+    && apt-get clean
 
-RUN docker-php-ext-install pdo_mysql mbstring zip exif pcntl
+# Extensiones PHP necesarias para Laravel
+RUN docker-php-ext-install pdo pdo_mysql
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
+# Copiar código Laravel
 WORKDIR /var/www/html
 COPY . .
 
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+# Instalar Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN composer install --no-dev --optimize-autoloader
 
-RUN npm install
-RUN npm run build
+# Copiar configuraciones
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-RUN chown -R www-data:www-data storage bootstrap/cache
+# Dar permisos
+RUN chown -R www-data:www-data /var/www/html
 
-COPY ./docker/nginx.conf /etc/nginx/nginx.conf
-COPY ./docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
+# Puerto que Render detecta
 EXPOSE 8080
 
+# Comando de inicio
 CMD ["/usr/bin/supervisord"]
